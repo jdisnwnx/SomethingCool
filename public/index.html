@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ask Gemini AI</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="theme-switch-wrapper">
+    <label class="theme-switch" for="theme-toggle">
+      <input type="checkbox" id="theme-toggle">
+      <span class="slider round"></span>
+    </label>
+    <span id="theme-label">Dark Mode</span>
+  </div>
+
+  <div class="container">
+    <h1>Ask Gemini AI</h1>
+    <p class="subtitle">Ask questions with or without images.</p>
+    <form id="askForm" enctype="multipart/form-data">
+      <input type="text" name="prompt" placeholder="What’s on your mind?" required>
+      <div class="button-group">
+        <div class="upload-button">Upload Image</div>
+        <input type="file" id="image-upload" name="images" accept="image/*" multiple style="display: none;">
+        <button type="submit">Ask</button>
+      </div>
+    </form>
+    <div id="response" class="response-box"></div>
+  </div>
+
+  <script>
+    // Dark mode toggle functionality
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeLabel = document.getElementById('theme-label');
+    const body = document.body;
+
+    // Check for saved theme in localStorage
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      body.classList.add(savedTheme);
+      themeToggle.checked = savedTheme === 'dark-mode';
+      themeLabel.textContent = savedTheme === 'dark-mode' ? 'Dark Mode' : 'Light Mode';
+    }
+
+    // Toggle dark mode
+    themeToggle.addEventListener('change', () => {
+      if (themeToggle.checked) {
+        body.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark-mode');
+        themeLabel.textContent = 'Dark Mode';
+      } else {
+        body.classList.remove('dark-mode');
+        localStorage.setItem('theme', 'light-mode');
+        themeLabel.textContent = 'Light Mode';
+      }
+    });
+
+    // Form submission logic
+    document.getElementById('askForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      const prompt = formData.get('prompt');
+
+      const responseDiv = document.getElementById('response');
+      responseDiv.innerHTML = '<div class="loading">Thinking...</div>';
+      
+      try {
+        const response = await fetch('/api/ask', {
+          method: 'POST',
+          body: formData, // Send FormData directly (includes files if any)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        responseDiv.innerHTML = `<div class="response-content">${data.response || 'No response'}</div>`;
+      } catch (error) {
+        console.error('Error:', error);
+        responseDiv.innerHTML = '<div class="error">Oops! Something went wrong. Please try again.</div>';
+      }
+    });
+
+    // Trigger file input when "Upload Image" button is clicked
+    document.querySelector('.upload-button').addEventListener('click', () => {
+      document.getElementById('image-upload').click();
+    });
+  </script>
+</body>
+</html>
